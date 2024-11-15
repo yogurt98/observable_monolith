@@ -1,5 +1,5 @@
 ---
-- hosts: all
+- hosts: localhost
   tasks:
   - name: download k3d
     ansible.builtin.command: curl https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh -o /tmp/installk3d.sh
@@ -40,5 +40,31 @@
       name: wordpress
       chart_ref: oci://registry-1.docker.io/bitnamicharts/wordpress
       release_namespace: default
+
+  - name: Add Prometheus Helm repo
+    ansible.builtin.command: helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+  - name: Add Grafana Helm repo
+    ansible.builtin.command: helm repo add bitnami https://charts.bitnami.com/bitnami
+  - name: Update Helm repos
+    ansible.builtin.command: helm repo update
+
+  - name: Create monitoring namespace
+    kubernetes.core.k8s:
+      api_version: v1
+      kind: Namespace
+      name: monitoring
+
+  - name: Install Prometheus
+    kubernetes.core.helm:
+      name: prometheus
+      chart_ref: prometheus-community/prometheus
+      release_namespace: monitoring
+
+  - name: Install Grafana
+    kubernetes.core.helm:
+      name: grafana
+      chart_ref: bitnami/grafana
+      release_namespace: monitoring
+
 
 
